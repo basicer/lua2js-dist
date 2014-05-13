@@ -1,0 +1,19 @@
+{
+  "name": "Lua2JS",
+  "version": "0.0.1",
+  "description": "Lua 2 Javascript Transpiler",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "http://github.com/basicer/lua2js-dist"
+  },
+  "author": "Rob Blancakert",
+  "license": "MITC",
+  "bugs": {
+    "url": "https://github.com/basicer/lua2js-dist/issues"
+  },
+  "homepage": "https://github.com/basicer/lua2js-dist"
+}
