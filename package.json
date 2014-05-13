@@ -1,5 +1,5 @@
 {
-  "name": "Lua2JS",
+  "name": "lua2js",
   "version": "0.0.1",
   "description": "Lua 2 Javascript Transpiler",
   "main": "index.js",
