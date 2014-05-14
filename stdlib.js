@@ -81,12 +81,16 @@ var __lua = (function() {
 
 	function div(a,b) { return a / b; }
 
-	function call(flags, what, that /*, args... */ ) {
+	function call(flags, what, that, helper /*, args... */ ) {
 		var injectSelf = !!(flags & 1); 
 		var detectLua = !!(flags & 2); 
 
+		if ( what === null || what === undefined ) {
+			if ( helper === undefined ) throw "attempt to call a " + type(what) + " value";
+			else throw "attempt to call '" + helper + "' (a " + type(what) + " value)"; 
+		}
 
-		var args = expand(Array.prototype.slice.call(arguments, 3));
+		var args = expand(Array.prototype.slice.call(arguments, 4));
 
 		var doInject = true;
 
@@ -154,7 +158,15 @@ var __lua = (function() {
 		return null;
 	}
 
-	function index(table, prop) {
+	function index(table, prop, helper) {
+		if ( table === null || table === undefined || typeof table == "number" ) {
+			if ( helper == undefined ) {
+				throw "attempt to index a " + type(table) + " value";
+			} else {
+				throw "attempt to index '" + helper + "' (a " + type(table) + " value)";
+			}
+		}
+
 		if ( table instanceof LuaTable ) {
 			var val = table[prop];
 			if ( val !== null & val !== undefined ) return val;
@@ -171,7 +183,16 @@ var __lua = (function() {
 		}
 	}
 
-	function indexAssign(table, prop, value) {
+	function indexAssign(table, prop, value, helper) {
+
+		if ( table === null || table === undefined || typeof table == "number" ) {
+			if ( helper == undefined ) {
+				throw "attempt to index a " + type(table) + " value";
+			} else {
+				throw "attempt to index '" + helper + "' (a " + type(table) + " value)";
+			}
+		}
+
 		if ( table instanceof LuaTable ) {
 			var val = table[prop];
 			if ( val !== null & val !== undefined ) {
