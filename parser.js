@@ -479,9 +479,7 @@ this.parser = (function() {
             },
         peg$c180 = function(name, f) {
 
-                if ( f.rest ) {
-                    bhelper.injectRest(f.body.body, f.params.length);
-                }
+
 
                 if ( name.type != "MemberExpression" && opt("allowRegularFunctions", false) ) {
                     //TODO: this would need to be decorated
@@ -491,6 +489,10 @@ this.parser = (function() {
                 //TODO: Translate member expression into call
                 var params = f.params.slice(0);
                 if ( name.selfSuggar ) params = [{type: "Identifier", name: "self"}].concat(f.params);
+
+                if ( f.rest ) {
+                    bhelper.injectRest(f.body.body, params.length);
+                }
 
                 var out = builder.functionExpression(null, params, f.body)
                 if ( opt('decorateLuaObjects', false) ) {
@@ -508,17 +510,15 @@ this.parser = (function() {
                 if ( opt("allowRegularFunctions", false) )
                     return builder.functionDeclaration(name, f.params, f.body);
 
-                var decl = {type: "VariableDeclarator", id: name, init: builder.functionExpression(name, f.params, f.body)};
+                var func = builder.functionExpression(name, f.params, f.body);
+                if ( opt('decorateLuaObjects', false) ) {
+                    func = bhelper.luaOperator("makeFunction", func);
+                }
+
+                var decl = {type: "VariableDeclarator", id: name, init: func};
                 var out = builder.variableDeclaration("let", [ decl ]);
 
-                if ( opt('decorateLuaObjects', false) ) {
-                    return [out,{type: "ExpressionStatement", expression: builder.assignmentExpression("=",
-                        builder.memberExpression(decl.id, {type:"Identifier", name: "__luaType"}),
-                        {type:"Literal", value: "function"}
-                    )}];
-                } else {
-                    return out;
-                }
+                return out;
             },
         peg$c182 = function(f) {
                 var result = {
