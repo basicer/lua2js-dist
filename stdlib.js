@@ -448,12 +448,20 @@ env.type = function type(what) {
 
 env.pairs = function pairs(table) {
 	var list = [];
-	for ( var i = 0; i < table.numeric.length; ++i ) list.push([i + 1, table.numeric[i]]);
-	for ( var idx in table.hash ) list.push([idx, table.hash[idx]]);
+	if ( __lua.isTable(table) ) {
+		for ( var i = 0; i < table.numeric.length; ++i ) list.push([i + 1, i, table.numeric]);
+		for ( var idx in table.hash ) list.push([idx, idx, table.hash]);
+	} else {
+		var keys = Object.keys(table);
+		for ( var idx in keys ) list.push([keys[idx], keys[idx], table])
+	}
 
 	return __lua.makeMultiReturn(function(handle, cur) {
 		if ( handle.length < 1 ) return null;
-		return __lua.makeMultiReturn.apply(__lua, handle.shift());
+		var nfo = handle.shift();
+		var k = nfo[0];
+		var v = nfo[2][nfo[1]];
+		return __lua.makeMultiReturn(k,v);
 	}, list, null);
 }
 
@@ -470,32 +478,53 @@ env.ipairs = function ipairs(table) {
 }
 
 env.next = function next(table, cur) {
-	var next = ( cur === null || cur === undefined );
-	var t;
-	if (  __lua.isTable(table) ) {
-		if ( table.numeric.length > 0 && (next || (typeof cur == "number" && cur < table.numeric.length)) ) {
-			t = table.numeric;
+	if ( __lua.isTable(table) ) {
+		var list = [];
+		for ( var i = 0; i < table.numeric.length; ++i ) list.push([i + 1, table.numeric[i]]);
+		for ( var idx in table.hash ) list.push([idx, table.hash[idx]]);
+		var trigger = false;
+		for ( var i = 0; i < list.length; ++i ) {
+			var itm = list[i];
+			if ( cur === null || cur === undefined || trigger ) {
+				if ( itm[1] !== undefined && itm[1] !== null )
+					return __lua.makeMultiReturn(itm[0], itm[1]);
+			}
+			if ( cur === itm[0] ) trigger = true;
 		}
-		else t = table.hash;
+
+		return null;
 	} else {
-		t = table;
+		var list = Object.keys(table);
+		var trigger = false;
+		for ( var i = 0; i < list.length; ++i ) {
+			var idx = list[i];
+			var sidx = idx;
+			if ( typeof sidx == "number" ) sidx = sidx = 1;
+			if ( cur === null || cur === undefined || trigger ) return __lua.makeMultiReturn(idx, table[sidx]);
+			if ( cur === idx ) trigger = true;
+		}
+		return null;
 	}
-	for ( var idx in t ) {
-		var v = t[idx];
-		var sidx = idx;
-		if ( typeof sidx == "number" ) sidx = sidx + 1;
-		if ( next ) return __lua.makeMultiReturn(sidx, v);
-		next = ( idx === cur );
-	}
-	return null;
 }
 
 env.print = function print() { console.log.apply(console, arguments); }
 env.pcall = this.__lua.pcall;
 
 env.rawequals = function rawequals(a,b) { return a == b; }
-env.rawget = function rawget(table, prop) { return table[prop]; }
-env.rawset = function rawset(table, prop, val) { return table[prop] = val; }
+env.rawget = function rawget(table, prop) { 
+	if ( table instanceof LuaTable ) {
+		if ( typeof prop == "number" ) return table.numeric[prop - 1];
+		else return table.hash[prop];
+	}
+	return table[prop]; 
+}
+env.rawset = function rawset(table, prop, val) { 
+	if ( table instanceof LuaTable ) {
+		if ( typeof prop == "number" ) return table.numeric[prop - 1] = val;
+		else return table.hash[prop] = val;
+	}
+	return table[prop] = val; 
+}
 
 env.something = function something(table) {
 	var array = [];
