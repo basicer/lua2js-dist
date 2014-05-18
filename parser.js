@@ -451,7 +451,7 @@ this.parser = (function() {
                 if ( b.length == 0 ) return a;
                 var left = a;
                 for ( var i in b ) {
-                    left = builder.memberExpression(left, b[i].exp, b[i].isComputed);
+                    left = builder.memberExpression(left, b[i].exp, b[i].computed);
                     if ( b[i].suggar ) left.selfSuggar = true;
                 }
 
@@ -460,10 +460,10 @@ this.parser = (function() {
         peg$c188 = /^[.:]/,
         peg$c189 = { type: "class", value: "[.:]", description: "[.:]" },
         peg$c190 = function(p, e) {
-                return {exp: e, suggar: p == ':', isComputed: false }
+                return {exp: e, suggar: p == ':', computed: false }
             },
         peg$c191 = function(e) {
-                return {exp: e, suggar: false, isComputed: true }
+                return {exp: e, suggar: false, computed: true }
             },
         peg$c192 = function() { return eMsg("Malformed argument list."); },
         peg$c193 = function(a, b) {
@@ -6720,7 +6720,7 @@ this.parser = (function() {
         functionDeclaration: function(name, args, body, isGenerator, isExpression) {
             return wrapNode({type: "FunctionDeclaration", id: name, params: args, body: body, generator: isGenerator, expression: isExpression });
         },
-        memberExpression: function(obj, prop, isComputed) { return wrapNode({ type:"MemberExpression", object: obj, property: prop, isComputed: isComputed }); },
+        memberExpression: function(obj, prop, isComputed) { return wrapNode({ type:"MemberExpression", object: obj, property: prop, computed: isComputed }); },
         variableDeclaration: function(kind, decls) { return { type: "VariableDeclaration", declarations: decls, kind: opt("forceVar", true) ? "var" : kind } },
         functionExpression: function(name, args, body) { return { type: "FunctionExpression", name: name, body: body, params: args } },
         returnStatement: function(arg) { return wrapNode({type: "ReturnStatement", argument: arg}); }
@@ -6753,7 +6753,7 @@ this.parser = (function() {
             var out = builder.assignmentExpression("=", target, exp);
             if ( target.type == "MemberExpression" && opt("luaOperators", false) ) {
                 var prop = target.property;
-                if ( !target.isComputed ) prop = {"type": "Literal", "value": prop.name, loc: prop.loc, range: prop.range };
+                if ( !target.computed ) prop = {"type": "Literal", "value": prop.name, loc: prop.loc, range: prop.range };
                 
                 var helper;
                 var nue = bhelper.translateExpressionIfNeeded(target.object);
@@ -6888,7 +6888,7 @@ this.parser = (function() {
                 var helper = null;
                 
                 if ( callee.type == "Identifier" ) helper = callee.name;
-                else if ( callee.type == "MemberExpression" && !callee.isComputed ) helper = callee.property.name;
+                else if ( callee.type == "MemberExpression" && !callee.computed ) helper = callee.property.name;
 
                 helper = {"type": "Literal", "value": helper};
 
@@ -6901,7 +6901,7 @@ this.parser = (function() {
                     } else {
                         var tmp = bhelper.tempVar(callee.object);
                         
-                        var rexpr = builder.memberExpression(tmp.id, callee.property, callee.isComputed);
+                        var rexpr = builder.memberExpression(tmp.id, callee.property, callee.computed);
                         var rcallee = bhelper.translateExpressionIfNeeded(rexpr);
                         return bhelper.encloseDecls([
                             builder.returnStatement(
@@ -6937,7 +6937,7 @@ this.parser = (function() {
             if ( !opt("luaOperators", false) ) return exp;
             if ( exp.type == "MemberExpression" ) {
                 var prop = exp.property;
-                if ( !exp.isComputed ) prop = {"type": "Literal", value: prop.name };
+                if ( !exp.computed ) prop = {"type": "Literal", value: prop.name };
                 var nu = bhelper.memberExpression(bhelper.translateExpressionIfNeeded(exp.object), prop, false);
                 nu.origional = exp;
                 nu.range = exp.range;
