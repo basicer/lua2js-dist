@@ -222,13 +222,13 @@ var __lua = (function() {
 
 			if ( val !== null & val !== undefined ) {
 				if ( typeof prop == "number") table.numeric[prop-1] = value;
-				table.hash[prop] = value;
+				else table.hash[prop] = value;
 				return true;
 			}
 
 			if ( table.__metatable === undefined ) {
 				if ( typeof prop == "number") table.numeric[prop-1] = value;
-				table.hash[prop] = value;
+				else table.hash[prop] = value;
 				return true;
 			}
 
@@ -237,12 +237,13 @@ var __lua = (function() {
 			var idx = table.__metatable.__newindex;
 			if ( idx === null || idx === undefined ) {
 				if ( typeof pop == "number") table.numeric[prop] = value;
-				table.hash[prop] = value;
+				else table.hash[prop] = value;
 				return true;	
 			}
 
 			if ( typeof idx == "function" ) idx(table, prop, value);
 			else indexAssign(idx, prop, value);
+
 			return true;
 
 
