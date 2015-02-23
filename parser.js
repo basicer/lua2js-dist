@@ -6862,8 +6862,11 @@ this.parser = (function() {
             if ( opt("luaOperators", false) ) {
                 var map = {"+": "add", "-": "sub", "*": "mul", "/": "div", "^": "pow", "%":"mod",
                     "..": "concat", "==": "eq", "<": "lt", "<=": "lte", ">": "gt", ">=": "gte", "~=": "ne",
-                    "and": "and", "or": "or"
+                    "and": "andss", "or": "orss"
                 };
+                if ( op == "and" || op == "or" ) {
+                    b = bhelper.valueProvdier(b);
+                }
                 return bhelper.luaOperator(map[op], a, b);
             } else {
 
@@ -6964,6 +6967,11 @@ this.parser = (function() {
                         )
                     }
                  ]));
+        },
+        valueProvdier: function(statement) {
+            return builder.functionExpression(null, [], bhelper.blockStatement([
+                builder.returnStatement(statement)
+            ]));
         }
       }
 
