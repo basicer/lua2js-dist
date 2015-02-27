@@ -6727,14 +6727,25 @@ this.parser = (function() {
       };
 
       var i = function(n) { return { type: "Identifier", name: n}; }
+      var id = i;
       var tmpVarCtr = 0;
 
       function clone(obj) {
         return JSON.parse(JSON.stringify(obj));
       }
 
+
+
       function finalize(ast) {
         if ( opt("loose", false) ) ast.errors = errors;
+        
+        if ( opt("useStrict", false) ) {
+            ast.body.unshift({
+                type: "ExpressionStatement",
+                expression: { type: "Literal", value: "use strict" }
+            });
+        }
+
         if ( opt("noSharedObjects", true) ) return clone(ast);
         return ast;
       }
@@ -6839,8 +6850,14 @@ this.parser = (function() {
                 body[i] = bhelper.assign(names[i], temps[i]);
             }
 
-            var out = bhelper.encloseDeclsUnpack(body, temps, explist, true);
-            return out;
+            if ( names.length > 1 ) {
+                return bhelper.encloseDeclsUnpack(body, temps, explist, true);
+            } else {
+                var value = explist[0];
+                if ( value.type == "CallExpression" ) value = bhelper.luaOperator("oneValue", value);
+                return bhelper.assign(names[0], value);
+            }
+            
         },
         luaOperator: function(op /*, args */) {
             var o = builder.callExpression(
@@ -6859,14 +6876,12 @@ this.parser = (function() {
             return o;
         },
         binaryExpression: function(op, a, b) {
-            if ( opt("luaOperators", false) ) {
+            if ( opt("luaOperators", false) && op != "and" && op != "or" ) {
                 var map = {"+": "add", "-": "sub", "*": "mul", "/": "div", "^": "pow", "%":"mod",
                     "..": "concat", "==": "eq", "<": "lt", "<=": "lte", ">": "gt", ">=": "gte", "~=": "ne",
-                    "and": "andss", "or": "orss"
+                    "and": "and", "or": "or"
                 };
-                if ( op == "and" || op == "or" ) {
-                    b = bhelper.valueProvdier(b);
-                }
+                
                 return bhelper.luaOperator(map[op], a, b);
             } else {
 
@@ -6874,6 +6889,9 @@ this.parser = (function() {
                 else if ( op == ".." ) op = "+";
                 else if ( op == "or" ) op = "||";
                 else if ( op == "and" ) op = "&&";
+
+                a = bhelper.luaOperator("oneValue", a);
+                b = bhelper.luaOperator("oneValue", b);
 
                 return builder.binaryExpression(op, a, b);
             }

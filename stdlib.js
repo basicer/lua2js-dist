@@ -30,6 +30,9 @@ var __lua = (function() {
 		if ( mtf !== null ) return mtf(a);
 
 		if ( a === undefined || a === null ) return "nil";
+		if ( a instanceof LuaTable ) {
+			return "table: 0x" + a.id;
+		}
 		return "" + a;
 	}
 
@@ -148,15 +151,6 @@ var __lua = (function() {
 	function and(a,b) { return a && b; }
 	function or(a,b) { return a || b; }
 
-	function andss(a,b) { 
-		return a && b(); 
-	}
-	
-	function orss(a,b) { 
-		return a || b(); 
-	}
-	
-
 	function call(flags, what, that, helper /*, args... */ ) {
 		var injectSelf = !!(flags & 1); 
 		var detectLua = !!(flags & 2); 
@@ -166,7 +160,7 @@ var __lua = (function() {
 			else throw "attempt to call '" + helper + "' (a " + type(what) + " value)"; 
 		}
 
-		var args = expand(Array.prototype.slice.call(arguments, 4));
+		var args = expand(Array.prototype.slice.call(arguments, 4), true);
 
 		var doInject = true;
 
@@ -202,12 +196,17 @@ var __lua = (function() {
 		return out;
 	}
 
+	var id = 0;
 	function LuaTable() {
+		this.id = ++id;
 		this.numeric = [];
 		this.hash = {};
 	};
 
 	Object.defineProperty(LuaTable.prototype, "__luaType",  {value: "table",  enumerable: false});
+	Object.defineProperty(LuaTable.prototype, "toString",  {value: function() {
+		return makeString(this);
+	},  enumerable: false});
 
 	function makeTable(t, allowExpand /*, numeric ... */) {
 		var out = new LuaTable();
@@ -366,7 +365,7 @@ var __lua = (function() {
 
 	function pcall(what /*, args... */ ) {
 		try {
-			var result = expand([what.apply(this, Array.prototype.slice.call(arguments, 1))]);
+			var result = expand([what.apply(this, Array.prototype.slice.call(arguments, 1))], true);
 			result.unshift(true);
 			return makeMultiReturn.apply(__lua, result);
 		} catch ( e ) {
@@ -410,8 +409,6 @@ var __lua = (function() {
 		count: count,
 		and: and,
 		or: or,
-		andss: andss,
-		orss: orss,
 		expand: expand,
 		rest: rest,
 		pcall: pcall,
@@ -420,7 +417,8 @@ var __lua = (function() {
 		isTable: isTable,
 		mark: mark,
 		forcomp: forcomp,
-		makeString: makeString
+		makeString: makeString,
+		oneValue: oneValue
 	}
 
 
@@ -523,9 +521,15 @@ env.io = {
 
 env.error = function error(s) { throw s; }
 
-env.assert = function assert(what, msg) {
-	if ( !!!what ) console.log("Assertion Failed!", msg);
-	else ( console.log("Assert Passed!" , msg));
+env.assert = function assert(what, msg, code) {
+	if ( code === undefined ) {
+		code = msg
+		msg = undefined;
+	}
+
+	if ( !!what ) return what;
+
+	throw("Assert Failed!! " + code);
 }
 
 env.type = function type(what) {
