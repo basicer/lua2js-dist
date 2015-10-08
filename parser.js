@@ -6751,7 +6751,7 @@ this.parser = (function() {
 
       var builder = {
         assignmentExpression: function(op, left, right) { return wrapNode({type: "AssignmentExpression", operator: op, left: left, right: right }); },
-        binaryExpression: function(op, left, right) { return wrapNode({type: "BinaryExpression", operator: op, left: left, right: right }); },
+        binaryExpression: function(op, left, right) { return wrapNode({type: (op == '||' || op == '&&') ? "LogicalExpression" : "BinaryExpression", operator: op, left: left, right: right }); },
         blockStatement: function(body) { return wrapNode({ type: "BlockStatement", body: body}); },
         callExpression: function(callee, args) { return wrapNode({ type: "CallExpression", callee: callee, arguments: args}); },
         emptyStatement: function() { return wrapNode({ type: "EmptyStatement" }); },
@@ -6920,6 +6920,7 @@ this.parser = (function() {
             
         },
         luaOperator: function(op /*, args */) {
+            if ( op == "oneValue" && opt("noMutliReturnSquish", false) ) return arguments[1];
             var o = builder.callExpression(
                 builder.memberExpression(i("__lua"), i(op)), 
                 Array.prototype.slice.call(arguments, 1)

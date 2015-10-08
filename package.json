@@ -1,6 +1,6 @@
 {
   "name": "lua2js",
-  "version": "0.0.8",
+  "version": "0.0.9",
   "description": "Lua 2 Javascript Transpiler",
   "main": "index.js",
   "scripts": {
