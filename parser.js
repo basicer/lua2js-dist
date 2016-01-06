@@ -199,7 +199,8 @@ this.parser = (function() {
                     {
                             type: "VariableDeclarator",
                             id: a,
-                            init: idx.id
+                            init: idx.id,
+                            userCode: false
                     }
                 ]));
 
@@ -210,6 +211,7 @@ this.parser = (function() {
                             type: "VariableDeclarator",
                             id: idx.id,
                             init: start.id,
+                            userCode: false
                         }
                     ]),
                     body: body,
@@ -6777,7 +6779,8 @@ this.parser = (function() {
         memberExpression: function(obj, prop, isComputed) { return wrapNode({ type:"MemberExpression", object: obj, property: prop, computed: isComputed }); },
         variableDeclaration: function(kind, decls) { return { type: "VariableDeclaration", declarations: decls, kind: opt("forceVar", true) ? "var" : kind } },
         functionExpression: function(name, args, body) { return { type: "FunctionExpression", name: name, body: body, params: args } },
-        returnStatement: function(arg) { return wrapNode({type: "ReturnStatement", argument: arg}); }
+        returnStatement: function(arg) { return wrapNode({type: "ReturnStatement", argument: arg}); },
+        generatedReturnStatement: function(arg) { return wrapNode({type: "ReturnStatement", argument: arg, userCode: false}); }
       };
 
       var i = function(n) { return { type: "Identifier", name: n}; }
@@ -7056,7 +7059,8 @@ this.parser = (function() {
             block.unshift(builder.variableDeclaration("let", [
                     {
                         type: "VariableDeclarator", 
-                        id: {type: "Identifier", name:"__lua$rest"}, 
+                        id: {type: "Identifier", name:"__lua$rest"},
+                        userCode: false,
                         init: bhelper.luaOperator("rest", 
                             {type: "Identifier", name:"arguments"},
                             {type: "Literal", value:count}
@@ -7066,7 +7070,7 @@ this.parser = (function() {
         },
         valueProvdier: function(statement) {
             return builder.functionExpression(null, [], bhelper.blockStatement([
-                builder.returnStatement(statement)
+                builder.generatedReturnStatement(statement)
             ]));
         }
       }
